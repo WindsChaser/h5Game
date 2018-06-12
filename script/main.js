@@ -3,6 +3,7 @@
  */
 var KeyCode = Phaser.KeyCode;
 import { Vector } from "./utils.js";
+import { createPool } from "./module_loader.js";
 /**
  * 画笔
  */
@@ -35,6 +36,10 @@ let bulletGroup;
  * 子弹碰撞组
  */
 let bulletCollisionGroup;
+/**
+ * 子弹对象池
+ */
+let bulletPool;
 /**
  * 主角光环
  */
@@ -173,6 +178,30 @@ let create = () => {
         game.input.keyboard.addKeyCapture(KeyCode.SPACEBAR);
     }
     setupKeyboard();
+    {
+        bulletPool = createPool("bullet", {
+            create: (x) => {
+                let object = { x: 0 };
+                object.x = x;
+                return object;
+            }
+        }, {
+            init: () => {
+                this.x = 0;
+            }
+        });
+        let testo = bulletPool.create(666);
+        console.log(testo);
+        function fire(x, y, vx, vy) {
+            let bullet = game.add.sprite(x || 0, y || 0, "role");
+            game.physics.p2.enable(bullet, true);
+            bullet.body.setCollisionGroup(bulletCollisionGroup);
+            bullet.body.collides([brickCollisionGroup]);
+            bullet.body.collideWorldBounds = false;
+            bullet.body.velocity.x = vx;
+            bullet.body.velocity.y = vy;
+        }
+    }
     game.time.advancedTiming = true; //允许记录时间信息
     fps = game.add.text(0, 0, "", { fill: "#ff0000", fontSize: 30 }); //显示帧率
     fps.fixedToCamera = true; //固定显示在相机视野
@@ -214,13 +243,9 @@ let update = () => {
         role.body.velocity.y = vector.y;
     }
     moveRole();
-    //todo
-    //粒子发射器和武器都是简单碰撞检测，不能满足需求
-    //考虑实现一个对象池，提供位置绑定、发射频率、发射速度、组管理、碰撞检测、生命周期管理
-    //{init:function(object),set:function(object),restore:function(object)}
     function fire(x, y, vx, vy) {
         let bullet = game.add.sprite(x || 0, y || 0, "role");
-        game.physics.p2.enable(bullet);
+        game.physics.p2.enable(bullet, true);
         bullet.body.setCollisionGroup(bulletCollisionGroup);
         bullet.body.collides([brickCollisionGroup]);
         bullet.body.collideWorldBounds = false;

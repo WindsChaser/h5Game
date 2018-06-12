@@ -3,4 +3,5 @@
  */
 
 let keypress = window.keypress.Listener;
-export {keypress}
+let createPool = gamecore.Pooled;
+export {keypress, createPool}
