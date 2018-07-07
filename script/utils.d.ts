@@ -1,9 +1,3 @@
-/**
- * Created by wind on 2017/8/28.
- */
-/**
- * 自定义工具类
- */
 declare class Utils {
     constructor();
     /**
@@ -91,4 +85,20 @@ declare class StateMachine {
      */
     clone(): StateMachine;
 }
-export { Utils, Vector, StateMachine };
+/**
+ * 对象池
+ */
+declare class ObjectPool {
+    private _linkedList;
+    private _create;
+    private _release;
+    private _init;
+    constructor(create: any, release: any, init: any);
+    /**
+     * 取出一个对象，使用对象上的release方法归还对象
+     * @returns {any}
+     */
+    get(...args: any[]): any;
+    size(): any;
+}
+export { Utils, Vector, StateMachine, ObjectPool };

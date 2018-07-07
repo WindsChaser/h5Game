@@ -4,6 +4,7 @@
 /**
  * 自定义工具类
  */
+import { LinkedList } from "./module_loader.js";
 class Utils {
     constructor() {
     }
@@ -180,5 +181,41 @@ class StateMachine {
         return object;
     }
 }
-export { Utils, Vector, StateMachine };
+/**
+ * 对象池
+ */
+class ObjectPool {
+    constructor(create, release, init) {
+        this._linkedList = new LinkedList();
+        this._create = create;
+        this._release = release;
+        this._init = init;
+    }
+    /**
+     * 取出一个对象，使用对象上的release方法归还对象
+     * @returns {any}
+     */
+    get(...args) {
+        if (this._linkedList.size() > 0) {
+            let node = this._linkedList.head();
+            let object = node.data;
+            this._init(object, ...args);
+            node.remove();
+            return object;
+        }
+        else {
+            let object = this._create();
+            this._init(object, ...args);
+            object.release = () => {
+                this._release(object);
+                this._linkedList.append(object);
+            };
+            return object;
+        }
+    }
+    size() {
+        return this._linkedList.size();
+    }
+}
+export { Utils, Vector, StateMachine, ObjectPool };
 //# sourceMappingURL=utils.js.map

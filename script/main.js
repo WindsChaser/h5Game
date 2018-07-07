@@ -2,8 +2,7 @@
  * 主模块
  */
 var KeyCode = Phaser.KeyCode;
-import { Vector } from "./utils.js";
-import { createPool } from "./module_loader.js";
+import { Vector, ObjectPool } from "./utils.js";
 /**
  * 画笔
  */
@@ -54,6 +53,10 @@ let concernedKeys;
  */
 let cursor;
 /**
+ * 游戏的定时器，可以管理多个定时任务
+ */
+let timer;
+/**
  * 游戏资源预加载
  */
 let preload = () => {
@@ -71,6 +74,7 @@ let create = () => {
      * @type {number}
      */
     game.stage.backgroundColor = 0xdddddd; //设置游戏背景色
+    //game.world.setBounds(0, 0, game.width * 100, game.height * 100);//设置世界边界，这不会改变画面大小
     game.physics.startSystem(Phaser.Physics.P2JS); //启动P2物理系统
     //game.physics.p2.gravity.y = 980;//物理系统增加全局重力
     game.physics.p2.restitution = 1; //设置碰撞能量吸收系数
@@ -78,7 +82,7 @@ let create = () => {
     brickCollisionGroup = game.physics.p2.createCollisionGroup(); //其他对象碰撞组
     bulletCollisionGroup = game.physics.p2.createCollisionGroup(); //子弹碰撞组
     game.physics.p2.updateBoundsCollisionGroup(true); //更新碰撞组
-    game.physics.p2.setImpactEvents(true); //开启物理事件回调
+    //game.physics.p2.setImpactEvents(true);//开启物理事件回调
     /**
      * 创建循环贴图背景
      * @type {Phaser.TileSprite}
@@ -94,26 +98,32 @@ let create = () => {
     function createBricks(xnumber, ynumber, size) {
         for (let i = 0; i <= xnumber; i++) {
             for (let j = 0; j <= ynumber; j++) {
-                graphics = game.add.graphics(i * size, j * size); //增加画笔
+                graphics = game.make.graphics(i * size, j * size); //增加画笔
                 graphics.beginFill(Phaser.Color.HSVColorWheel()[Phaser.Math.roundTo(Phaser.Math.random(1, 359))].color32); //设置画笔填充颜色
                 //graphics.beginFill(0x66ccff,1);
                 if (j % 2 == 1)
                     graphics.drawCircle(0, 0, size); //绘制圆形
                 else
                     graphics.drawRect(-size / 2, -size / 2, size, size); //绘制矩形
-                game.physics.p2.enable(graphics, false); //开启物理系统
+                let brick = game.add.sprite(i * size, j * size, graphics.generateTexture());
+                game.physics.p2.enable(brick, false); //开启物理系统
                 if (j % 2 == 1)
-                    graphics.body.setCircle(size / 2); //设置碰撞体为圆，默认为矩形
-                graphics.body.setZeroDamping(); //设置无阻力
-                graphics.body.velocity.x = Math.random() * 50; //随机X速度
-                graphics.body.velocity.y = Math.random() * 50; //随机Y速度
-                graphics.body.setCollisionGroup(brickCollisionGroup);
-                graphics.body.collides([roleCollisionGroup, bulletCollisionGroup]);
-                graphics.body.collideWorldBounds = false;
+                    brick.body.setCircle(size / 2); //设置碰撞体为圆，默认为矩形
+                brick.body.setZeroDamping(); //设置无阻力
+                brick.body.velocity.x = Math.random() * 50; //随机X速度
+                brick.body.velocity.y = Math.random() * 50; //随机Y速度
+                brick.body.setCollisionGroup(brickCollisionGroup); //设置所属碰撞组
+                brick.body.collides([bulletCollisionGroup]); //设置要碰撞的组
+                brick.body.onBeginContact.add((thing) => {
+                    brick.body.removeNextStep = true; //确保body在下一个步进中才被摧毁
+                    brick.destroy(); //建议使用闭包摧毁自身，不建议轻易访问回调参数中的其他对象
+                }, this); //设置碰撞回调
+                brick.body.collideWorldBounds = false; //不与世界边界碰撞
+                //graphics.body.data.shapes[0].sensor = true;//设置可穿透，只引发contact事件，不执行碰撞
             }
         }
     }
-    createBricks(20, 20, 40);
+    createBricks(20, 20, 20);
     function createRole() {
         let scale = 4;
         role = game.add.sprite(game.width / 2, game.height - 100, "role"); //增加主角精灵
@@ -125,9 +135,13 @@ let create = () => {
         role.body.fixedRotation = true; //固定旋转角度，也就是不旋转
         //role.body.data.shapes[0].sensor = true;//关闭碰撞，但是依旧有碰撞检测回调
         role.body.setCollisionGroup(roleCollisionGroup); //设置属于的碰撞组
-        role.body.collides([brickCollisionGroup]); //设置要碰撞的组
-        role.body.collideWorldBounds = false; //不和世界边界碰撞
-        game.world.setBounds(0, 0, game.width * 100, game.height * 100); //设置世界边界，这不会改变画面大小
+        role.body.collides([]); //设置要碰撞的组
+        //role.body.collideWorldBounds = false;//不和世界边界碰撞
+        role.body.onBeginContact.add((role, thing) => {
+            //console.log(thing);
+            //thing.parent.sprite.destroy();//destroy可以摧毁对象
+            //thing.parent.sprite.kill();//kill将设置对象生命值为0，不再参与游戏循环，不可见，但是保留对象
+        }, this); //设置碰撞回调，不需要开启impact
         game.camera.follow(role); //相机跟随
         /**
          * 光环特效
@@ -177,37 +191,44 @@ let create = () => {
         game.input.keyboard.addKeyCapture(KeyCode.Z);
         game.input.keyboard.addKeyCapture(KeyCode.SPACEBAR);
     }
-    setupKeyboard();
-    {
-        bulletPool = createPool("bullet", {
-            create: (x) => {
-                let object = { x: 0 };
-                object.x = x;
-                return object;
-            }
-        }, {
-            init: () => {
-                this.x = 0;
-            }
+    bulletPool = new ObjectPool(() => {
+        let bullet = game.add.sprite(0, 0, "role");
+        game.physics.p2.enable(bullet, true);
+        bullet.body.setCollisionGroup(bulletCollisionGroup);
+        bullet.body.collides([brickCollisionGroup]);
+        bullet.body.collideWorldBounds = false;
+        bullet.body.onBeginContact.add(() => {
+            bullet.kill();
+            bullet.release(); //对象回收
+        }, this);
+        bullet.checkWorldBounds = true;
+        bullet.events.onOutOfBounds.add((bullet) => {
+            bullet.kill();
+            bullet.release();
         });
-        let testo = bulletPool.create(666);
-        console.log(testo);
-        function fire(x, y, vx, vy) {
-            let bullet = game.add.sprite(x || 0, y || 0, "role");
-            game.physics.p2.enable(bullet, true);
-            bullet.body.setCollisionGroup(bulletCollisionGroup);
-            bullet.body.collides([brickCollisionGroup]);
-            bullet.body.collideWorldBounds = false;
-            bullet.body.velocity.x = vx;
-            bullet.body.velocity.y = vy;
-        }
-    }
+        return bullet;
+    }, (bullet) => {
+    }, (bullet, x, y, vx, vy) => {
+        bullet.reset(0, 0);
+        bullet.body.reset(0, 0);
+        bullet.body.angle = 0;
+        bullet.body.x = x;
+        bullet.body.y = y;
+        bullet.body.velocity.x = vx;
+        bullet.body.velocity.y = vy;
+    });
+    setupKeyboard();
+    timer = game.time.create(false);
+    timer.start();
+    timer.loop(1000, () => {
+        createBricks(10, 10, 20);
+    }, this);
     game.time.advancedTiming = true; //允许记录时间信息
     fps = game.add.text(0, 0, "", { fill: "#ff0000", fontSize: 30 }); //显示帧率
     fps.fixedToCamera = true; //固定显示在相机视野
 };
 /**
- * 每一帧都会执行，处理玩家移动、FPS绘制等
+ * 每一帧都会执行，处理玩家操作等
  */
 let update = () => {
     /**
@@ -228,7 +249,7 @@ let update = () => {
             effect.alpha = 1;
         else
             effect.alpha = 0;
-        let speed = 1000 * (concernedKeys.shift.isDown ? 0.4 : 1);
+        let speed = 500 * (concernedKeys.shift.isDown ? 0.4 : 1);
         let vector = new Vector(0, 0);
         if (concernedKeys.down.isDown)
             vector.y = 1;
@@ -243,25 +264,30 @@ let update = () => {
         role.body.velocity.y = vector.y;
     }
     moveRole();
-    function fire(x, y, vx, vy) {
-        let bullet = game.add.sprite(x || 0, y || 0, "role");
-        game.physics.p2.enable(bullet, true);
-        bullet.body.setCollisionGroup(bulletCollisionGroup);
-        bullet.body.collides([brickCollisionGroup]);
-        bullet.body.collideWorldBounds = false;
-        bullet.body.velocity.x = vx;
-        bullet.body.velocity.y = vy;
-    }
     if (concernedKeys.space.isDown) {
-        //game.add.sprite(role.body.x,role.body.y,"role");
-        fire(role.x, role.y, 0, -200);
+        let bullet = bulletPool.get(role.x, role.y, 0, -200);
+        //todo
+        //加入子弹贴图
+        //加入敌人贴图
+        //敌人加入生命值
+        //处理子弹发射频率，使用time.physicsElapsed
     }
-    //console.log(role.animations.frame);
+};
+/**
+ * 渲染结束后，如渲染帧率
+ */
+let render = () => {
     fps.text = "Fps:" + game.time.fps;
+    fps.bringToTop(); //置于最上层
 };
 /**
  * 新建游戏
  * @type {Phaser.Game}
  */
-let game = new Phaser.Game(800, 800, Phaser.AUTO, "start", { preload: preload, create: create, update: update });
+let game = new Phaser.Game(800, 800, Phaser.AUTO, "start", {
+    preload: preload,
+    create: create,
+    update: update,
+    render: render
+});
 //# sourceMappingURL=main.js.map

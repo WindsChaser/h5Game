@@ -3,5 +3,6 @@
  */
 
 let keypress = window.keypress.Listener;
+let LinkedList = DLL.DoublyLinkedList;
 let createPool = gamecore.Pooled;
-export {keypress, createPool}
+export {LinkedList, createPool}
