@@ -20,25 +20,25 @@ let background;
  */
 let role;
 /**
- * 砖块碰撞组
+ * 敌人碰撞组
  */
-let brickCollisionGroup;
+let enemyCollisionGroup;
+/**
+ * 敌人子弹碰撞组
+ */
+let enemyBulletCollisionGroup;
 /**
  * 主角碰撞组
  */
 let roleCollisionGroup;
 /**
- * 子弹精灵组
- */
-let bulletGroup;
-/**
  * 子弹碰撞组
  */
-let bulletCollisionGroup;
+let roleBulletCollisionGroup;
 /**
- * 子弹对象池
+ * 主角子弹对象池
  */
-let bulletPool;
+let roleBulletPool;
 /**
  * 主角光环
  */
@@ -61,9 +61,13 @@ let timer;
  */
 let preload = () => {
     game.load.baseURL = "res/texture/"; //设置基础URL为纹理目录
-    game.load.atlasJSONArray("role"); //主角贴图
-    game.load.atlasJSONArray("sloweffect"); //慢速移动特效贴图
+    game.load.spritesheet("role", 'role/role_01.png', 32, 48); //主角贴图
+    game.load.spritesheet("sloweffect", 'sloweffect.png', 64, 64); //慢速移动特效贴图
+    game.load.spritesheet("enemy", 'enemy.png', 64, 64); //敌人贴图，大蝴蝶
+    game.load.spritesheet('bullet-enemy', 'bullet.png', 16, 16); //敌人子弹贴图集
+    game.load.image('bullet-role', 'role/role_05.png'); //主角子弹贴图集
     game.load.image("st01a"); //关卡背景贴图
+    game.load.audio('bgm', 'bgm.mp3'); //BGM
 };
 /**
  * 创建游戏起始对象和相关动画配置等
@@ -79,10 +83,13 @@ let create = () => {
     //game.physics.p2.gravity.y = 980;//物理系统增加全局重力
     game.physics.p2.restitution = 1; //设置碰撞能量吸收系数
     roleCollisionGroup = game.physics.p2.createCollisionGroup(); //角色碰撞组
-    brickCollisionGroup = game.physics.p2.createCollisionGroup(); //其他对象碰撞组
-    bulletCollisionGroup = game.physics.p2.createCollisionGroup(); //子弹碰撞组
+    enemyCollisionGroup = game.physics.p2.createCollisionGroup(); //敌人碰撞组
+    roleBulletCollisionGroup = game.physics.p2.createCollisionGroup(); //主角子弹碰撞组
+    enemyBulletCollisionGroup = game.physics.p2.createCollisionGroup(); //敌人子弹碰撞组
     game.physics.p2.updateBoundsCollisionGroup(true); //更新碰撞组
     //game.physics.p2.setImpactEvents(true);//开启物理事件回调
+    timer = game.time.create(false);
+    timer.start(); //开启游戏全局定时器
     /**
      * 创建循环贴图背景
      * @type {Phaser.TileSprite}
@@ -112,10 +119,10 @@ let create = () => {
                 brick.body.setZeroDamping(); //设置无阻力
                 brick.body.velocity.x = Math.random() * 50; //随机X速度
                 brick.body.velocity.y = Math.random() * 50; //随机Y速度
-                brick.body.setCollisionGroup(brickCollisionGroup); //设置所属碰撞组
-                brick.body.collides([bulletCollisionGroup]); //设置要碰撞的组
+                brick.body.setCollisionGroup(enemyCollisionGroup); //设置所属碰撞组
+                brick.body.collides([roleBulletCollisionGroup]); //设置要碰撞的组
                 brick.body.onBeginContact.add((thing) => {
-                    brick.body.removeNextStep = true; //确保body在下一个步进中才被摧毁
+                    //brick.body.removeNextStep = true;//确保body在下一个步进中才被摧毁
                     brick.destroy(); //建议使用闭包摧毁自身，不建议轻易访问回调参数中的其他对象
                 }, this); //设置碰撞回调
                 brick.body.collideWorldBounds = false; //不与世界边界碰撞
@@ -123,9 +130,51 @@ let create = () => {
             }
         }
     }
-    createBricks(20, 20, 20);
+    //createBricks(20, 20, 20);
+    function createEnemy(x, y) {
+        //let enemy = game.add.sprite(x || 200, y || 200, 'enemy');
+        let enemy = game.add.sprite(x || 200, y || 200, 'enemy');
+        enemy.animations.add('stand', [0, 1, 2, 3, 4], 10, true); //开启帧动画
+        enemy.animations.play('stand');
+        game.physics.p2.enable(enemy, true);
+        enemy.body.static = true; //设置不能移动
+        enemy.body.setCollisionGroup(enemyCollisionGroup);
+        enemy.body.collides([roleBulletCollisionGroup]);
+        enemy.health = 10; //生命值
+        let fire = timer.loop(1000, () => {
+            let bullet = game.add.sprite(enemy.body.x, enemy.body.y, 'bullet-enemy', 162);
+            game.physics.p2.enable(bullet, false);
+            let tween = game.add.tween(bullet.body).to({ angle: 359 }, 4000, Phaser.Easing.Default, true, 0, -1);
+            let vector = new Vector(role.body.x - bullet.body.x, role.body.y - bullet.body.y);
+            vector.value = 400;
+            bullet.body.velocity.x = vector.x;
+            bullet.body.velocity.y = vector.y;
+            bullet.body.setCollisionGroup(enemyBulletCollisionGroup);
+            bullet.body.collides([roleCollisionGroup]);
+            bullet.body.collideWorldBounds = false;
+            bullet.body.checkWorldBounds = true;
+            bullet.body.onBeginContact.add(() => {
+                bullet.destroy();
+            });
+            bullet.events.onOutOfBounds.add(() => {
+                bullet.destroy();
+            });
+        });
+        enemy.body.onBeginContact.add(() => {
+            enemy.damage(1);
+        });
+        enemy.events.onKilled.add(() => {
+            timer.remove(fire);
+            enemy.destroy();
+        });
+        return enemy;
+        //game.add.tween(enemy.body).to({x:600},2000,Phaser.Easing.Bounce.Out,true,0,-1,true);//往复移动补间动画
+    }
+    timer.loop(1000, () => {
+        createEnemy(Math.random() * 800, Math.random() * 400);
+    });
     function createRole() {
-        let scale = 4;
+        let scale = 2;
         role = game.add.sprite(game.width / 2, game.height - 100, "role"); //增加主角精灵
         role.scale = new Phaser.Point(scale, scale); //精灵大小放缩
         game.physics.p2.enable(role, true); //开启物理系统
@@ -135,7 +184,7 @@ let create = () => {
         role.body.fixedRotation = true; //固定旋转角度，也就是不旋转
         //role.body.data.shapes[0].sensor = true;//关闭碰撞，但是依旧有碰撞检测回调
         role.body.setCollisionGroup(roleCollisionGroup); //设置属于的碰撞组
-        role.body.collides([]); //设置要碰撞的组
+        role.body.collides([enemyBulletCollisionGroup]); //设置要碰撞的组
         //role.body.collideWorldBounds = false;//不和世界边界碰撞
         role.body.onBeginContact.add((role, thing) => {
             //console.log(thing);
@@ -169,7 +218,6 @@ let create = () => {
         }, this);
     }
     createRole();
-    bulletGroup = game.add.group(null, null, true, true, Phaser.Physics.P2JS);
     /**
      * 设置键盘输入
      */
@@ -191,11 +239,12 @@ let create = () => {
         game.input.keyboard.addKeyCapture(KeyCode.Z);
         game.input.keyboard.addKeyCapture(KeyCode.SPACEBAR);
     }
-    bulletPool = new ObjectPool(() => {
-        let bullet = game.add.sprite(0, 0, "role");
-        game.physics.p2.enable(bullet, true);
-        bullet.body.setCollisionGroup(bulletCollisionGroup);
-        bullet.body.collides([brickCollisionGroup]);
+    roleBulletPool = new ObjectPool(() => {
+        let bullet = game.add.sprite(0, 0, "bullet-role");
+        game.physics.p2.enable(bullet, false);
+        bullet.body.setZeroDamping();
+        bullet.body.setCollisionGroup(roleBulletCollisionGroup);
+        bullet.body.collides([enemyCollisionGroup]);
         bullet.body.collideWorldBounds = false;
         bullet.body.onBeginContact.add(() => {
             bullet.kill();
@@ -210,22 +259,32 @@ let create = () => {
     }, (bullet) => {
     }, (bullet, x, y, vx, vy) => {
         bullet.reset(0, 0);
-        bullet.body.reset(0, 0);
-        bullet.body.angle = 0;
+        bullet.body.angle = -90; //调整贴图角度
         bullet.body.x = x;
         bullet.body.y = y;
         bullet.body.velocity.x = vx;
         bullet.body.velocity.y = vy;
     });
     setupKeyboard();
-    timer = game.time.create(false);
-    timer.start();
     timer.loop(1000, () => {
-        createBricks(10, 10, 20);
+        //createBricks(10, 10, 20);
     }, this);
+    let fireEvent; //发射子弹事件
+    concernedKeys.space.onDown.add(() => {
+        let bullet = roleBulletPool.get(role.x, role.y, 0, -1200); //按下时必然发射一颗子弹
+        fireEvent = timer.loop(1000 / 20, () => {
+            let bullet = roleBulletPool.get(role.x, role.y, 0, -1200); //从对象池中取出一个对象
+        });
+    });
+    concernedKeys.space.onUp.add(() => {
+        timer.remove(fireEvent); //放开按键时停止发射
+    });
     game.time.advancedTiming = true; //允许记录时间信息
     fps = game.add.text(0, 0, "", { fill: "#ff0000", fontSize: 30 }); //显示帧率
     fps.fixedToCamera = true; //固定显示在相机视野
+    let bgm = game.add.audio('bgm');
+    bgm.play();
+    bgm.resume(); //chrome66要求首次加载页面时必须调用resume方法，否则会拒绝播放
 };
 /**
  * 每一帧都会执行，处理玩家操作等
@@ -264,30 +323,35 @@ let update = () => {
         role.body.velocity.y = vector.y;
     }
     moveRole();
-    if (concernedKeys.space.isDown) {
-        let bullet = bulletPool.get(role.x, role.y, 0, -200);
-        //todo
-        //加入子弹贴图
-        //加入敌人贴图
-        //敌人加入生命值
-        //处理子弹发射频率，使用time.physicsElapsed
-    }
+    //console.log(bulletPool.size());
 };
 /**
- * 渲染结束后，如渲染帧率
+ * 渲染结束后，更新帧率文字
  */
 let render = () => {
     fps.text = "Fps:" + game.time.fps;
     fps.bringToTop(); //置于最上层
 };
-/**
- * 新建游戏
- * @type {Phaser.Game}
- */
-let game = new Phaser.Game(800, 800, Phaser.AUTO, "start", {
+let startGameState = {
+    preload: () => {
+    },
+    create: () => {
+    },
+    update: () => {
+    }
+};
+let playState = {
     preload: preload,
     create: create,
     update: update,
     render: render
-});
+};
+/**
+ * 新建游戏
+ * @type {Phaser.Game}
+ */
+let game = new Phaser.Game(800, 800, Phaser.AUTO);
+game.state.add("start", startGameState);
+game.state.add("play", playState);
+game.state.start("play");
 //# sourceMappingURL=main.js.map
