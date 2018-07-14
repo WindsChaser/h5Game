@@ -65,7 +65,7 @@ function getState(game: Phaser.Game)
 		game.load.spritesheet("enemy", 'texture/enemy.png', 64, 64);//敌人贴图，大蝴蝶
 		game.load.spritesheet('bullet-enemy', 'texture/bullet.png', 16, 16);//敌人子弹贴图集
 		game.load.image('bullet-role', 'texture/role/role_05.png');//主角子弹贴图集
-		game.load.image("st01a","texture/st01a.png");//关卡背景贴图
+		game.load.image("st01a", "texture/st01a.png");//关卡背景贴图
 		game.load.audio('bgm', 'sound/bgm.mp3');//BGM
 	};
 	/**
@@ -77,8 +77,8 @@ function getState(game: Phaser.Game)
 		 * 游戏背景和物理引擎设置
 		 * @type {number}
 		 */
-		game.stage.backgroundColor = 0xdddddd;//设置游戏背景色
-		//game.world.setBounds(0, 0, game.width * 100, game.height * 100);//设置世界边界，这不会改变画面大小
+		game.add.tween(game.world).to({alpha: 1}, 1000, Phaser.Easing.Default, true);
+		game.stage.backgroundColor = 0x000000;//设置游戏背景色
 		game.physics.startSystem(Phaser.Physics.P2JS);//启动P2物理系统
 		//game.physics.p2.gravity.y = 980;//物理系统增加全局重力
 		game.physics.p2.restitution = 1;//设置碰撞能量吸收系数
@@ -95,7 +95,7 @@ function getState(game: Phaser.Game)
 		 * 创建循环贴图背景
 		 * @type {Phaser.TileSprite}
 		 */
-		background = game.add.tileSprite(0, 0, game.width * 100, game.height * 100, "st01a");
+		background = game.add.tileSprite(0, 0, game.width, game.height, "st01a");
 		background.autoScroll(0, 90);
 
 		/**
@@ -145,7 +145,7 @@ function getState(game: Phaser.Game)
 			let enemy = game.add.sprite(x || 200, y || 200, 'enemy');
 			enemy.animations.add('stand', [0, 1, 2, 3, 4], 10, true);//开启帧动画
 			enemy.animations.play('stand');
-			game.physics.p2.enable(enemy, true);
+			game.physics.p2.enable(enemy, false);
 			enemy.body.static = true;//设置不能移动
 			enemy.body.setCollisionGroup(enemyCollisionGroup);
 			enemy.body.collides([roleBulletCollisionGroup]);
@@ -154,6 +154,7 @@ function getState(game: Phaser.Game)
 			{
 				let bullet = game.add.sprite(enemy.body.x, enemy.body.y, 'bullet-enemy', 162);
 				game.physics.p2.enable(bullet, false);
+				bullet.body.setCircle(8);
 				let tween = game.add.tween(bullet.body).to({angle: 359}, 4000, Phaser.Easing.Default, true, 0, -1);
 				let vector = new Vector(role.body.x - bullet.body.x, role.body.y - bullet.body.y);
 				vector.value = 400;
@@ -167,6 +168,7 @@ function getState(game: Phaser.Game)
 				{
 					game.tweens.remove(tween);
 					bullet.destroy();
+					game.camera.shake(0.01,500,true);
 				});
 				bullet.events.onOutOfBounds.add(() =>
 				{
@@ -201,7 +203,7 @@ function getState(game: Phaser.Game)
 			game.physics.p2.enable(role, true);//开启物理系统
 			role.body.setCircle(3 * scale);
 			role.body.mass = 16;//指定质量
-			role.body.motionState = Phaser.Physics.P2.Body.DYNAMIC;//指定碰撞体类型为动态
+			role.body.motionState = Phaser.Physics.P2.Body.DYNAMIC;//指定碰撞体类型
 			role.body.fixedRotation = true;//固定旋转角度，也就是不旋转
 			//role.body.data.shapes[0].sensor = true;//关闭碰撞，但是依旧有碰撞检测回调
 			role.body.setCollisionGroup(roleCollisionGroup);//设置属于的碰撞组
@@ -311,7 +313,7 @@ function getState(game: Phaser.Game)
 			//createBricks(10, 10, 20);
 		}, this);
 		let fireEvent: Phaser.TimerEvent;//发射子弹事件
-		concernedKeys.space.onDown.add(() =>
+		concernedKeys.z.onDown.add(() =>
 		{
 			let bullet = roleBulletPool.get(role.x, role.y, 0, -1200);//按下时必然发射一颗子弹
 			fireEvent = timer.loop(1000 / 20, () =>
@@ -319,7 +321,7 @@ function getState(game: Phaser.Game)
 				let bullet = roleBulletPool.get(role.x, role.y, 0, -1200);//从对象池中取出一个对象
 			});
 		});
-		concernedKeys.space.onUp.add(() =>
+		concernedKeys.z.onUp.add(() =>
 		{
 			timer.remove(fireEvent);//放开按键时停止发射
 		});
@@ -329,7 +331,8 @@ function getState(game: Phaser.Game)
 		fps.fixedToCamera = true;//固定显示在相机视野
 
 		let bgm = game.add.audio('bgm');
-		bgm.onDecoded.add((bgm)=>{
+		bgm.onDecoded.add((bgm) =>
+		{
 			bgm.play();
 			//bgm.resume();//chrome66要求首次加载页面时必须调用resume方法，否则会拒绝播放
 		});
@@ -377,7 +380,7 @@ function getState(game: Phaser.Game)
 		moveRole();
 
 
-		//console.log(bulletPool.size());
+		//console.log(roleBulletPool.size());
 	};
 	/**
 	 * 渲染结束后，更新帧率文字

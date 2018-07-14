@@ -71,8 +71,8 @@ function getState(game) {
          * 游戏背景和物理引擎设置
          * @type {number}
          */
-        game.stage.backgroundColor = 0xdddddd; //设置游戏背景色
-        //game.world.setBounds(0, 0, game.width * 100, game.height * 100);//设置世界边界，这不会改变画面大小
+        game.add.tween(game.world).to({ alpha: 1 }, 1000, Phaser.Easing.Default, true);
+        game.stage.backgroundColor = 0x000000; //设置游戏背景色
         game.physics.startSystem(Phaser.Physics.P2JS); //启动P2物理系统
         //game.physics.p2.gravity.y = 980;//物理系统增加全局重力
         game.physics.p2.restitution = 1; //设置碰撞能量吸收系数
@@ -88,7 +88,7 @@ function getState(game) {
          * 创建循环贴图背景
          * @type {Phaser.TileSprite}
          */
-        background = game.add.tileSprite(0, 0, game.width * 100, game.height * 100, "st01a");
+        background = game.add.tileSprite(0, 0, game.width, game.height, "st01a");
         background.autoScroll(0, 90);
         /**
          * 创建一堆随机初速度的圆形和矩形
@@ -130,7 +130,7 @@ function getState(game) {
             let enemy = game.add.sprite(x || 200, y || 200, 'enemy');
             enemy.animations.add('stand', [0, 1, 2, 3, 4], 10, true); //开启帧动画
             enemy.animations.play('stand');
-            game.physics.p2.enable(enemy, true);
+            game.physics.p2.enable(enemy, false);
             enemy.body.static = true; //设置不能移动
             enemy.body.setCollisionGroup(enemyCollisionGroup);
             enemy.body.collides([roleBulletCollisionGroup]);
@@ -138,6 +138,7 @@ function getState(game) {
             let fire = timer.loop(1000, () => {
                 let bullet = game.add.sprite(enemy.body.x, enemy.body.y, 'bullet-enemy', 162);
                 game.physics.p2.enable(bullet, false);
+                bullet.body.setCircle(8);
                 let tween = game.add.tween(bullet.body).to({ angle: 359 }, 4000, Phaser.Easing.Default, true, 0, -1);
                 let vector = new Vector(role.body.x - bullet.body.x, role.body.y - bullet.body.y);
                 vector.value = 400;
@@ -150,6 +151,7 @@ function getState(game) {
                 bullet.body.onBeginContact.add(() => {
                     game.tweens.remove(tween);
                     bullet.destroy();
+                    game.camera.shake(0.01, 500, true);
                 });
                 bullet.events.onOutOfBounds.add(() => {
                     game.tweens.remove(tween);
@@ -176,7 +178,7 @@ function getState(game) {
             game.physics.p2.enable(role, true); //开启物理系统
             role.body.setCircle(3 * scale);
             role.body.mass = 16; //指定质量
-            role.body.motionState = Phaser.Physics.P2.Body.DYNAMIC; //指定碰撞体类型为动态
+            role.body.motionState = Phaser.Physics.P2.Body.DYNAMIC; //指定碰撞体类型
             role.body.fixedRotation = true; //固定旋转角度，也就是不旋转
             //role.body.data.shapes[0].sensor = true;//关闭碰撞，但是依旧有碰撞检测回调
             role.body.setCollisionGroup(roleCollisionGroup); //设置属于的碰撞组
@@ -266,13 +268,13 @@ function getState(game) {
             //createBricks(10, 10, 20);
         }, this);
         let fireEvent; //发射子弹事件
-        concernedKeys.space.onDown.add(() => {
+        concernedKeys.z.onDown.add(() => {
             let bullet = roleBulletPool.get(role.x, role.y, 0, -1200); //按下时必然发射一颗子弹
             fireEvent = timer.loop(1000 / 20, () => {
                 let bullet = roleBulletPool.get(role.x, role.y, 0, -1200); //从对象池中取出一个对象
             });
         });
-        concernedKeys.space.onUp.add(() => {
+        concernedKeys.z.onUp.add(() => {
             timer.remove(fireEvent); //放开按键时停止发射
         });
         game.time.advancedTiming = true; //允许记录时间信息
@@ -321,7 +323,7 @@ function getState(game) {
             role.body.velocity.y = vector.y;
         }
         moveRole();
-        //console.log(bulletPool.size());
+        //console.log(roleBulletPool.size());
     };
     /**
      * 渲染结束后，更新帧率文字

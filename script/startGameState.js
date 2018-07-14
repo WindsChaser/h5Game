@@ -1,3 +1,4 @@
+var KeyCode = Phaser.KeyCode;
 function getState(game) {
     let preload = () => {
         game.load.baseURL = "res/";
@@ -35,6 +36,15 @@ function getState(game) {
         let loadingText2 = game.add.image(850, 740, 'loading-text', 0);
         loadingText2.alpha = 0.3;
         game.add.tween(loadingText2).to({ alpha: 0.7 }, 300, Phaser.Easing.Default, true, 500, -1, true);
+        let concernedKeys = game.input.keyboard.addKeys({
+            "z": KeyCode.Z
+        });
+        game.input.keyboard.addKeyCapture(KeyCode.Z);
+        concernedKeys.z.onDown.addOnce(() => {
+            game.add.tween(game.world).to({ alpha: 0 }, 500, Phaser.Easing.Default, true).onComplete.add(() => {
+                game.state.start('play', true, true);
+            });
+        });
     };
     let update = () => {
         //console.log(loadingText.alpha);
