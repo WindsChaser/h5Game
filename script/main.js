@@ -8,7 +8,7 @@ import playGameState from "./playGameState.js";
  * @type {Phaser.Game}
  */
 let game = new Phaser.Game(1280, 960, Phaser.AUTO);
-game.state.add("start", startGameState(game));
-game.state.add("play", playGameState(game));
+game.state.add("start", startGameState(game)); //游戏启动画面
+game.state.add("play", playGameState(game)); //正式开始游戏画面
 game.state.start("start");
 //# sourceMappingURL=main.js.map
