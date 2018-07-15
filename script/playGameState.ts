@@ -54,6 +54,8 @@ function getState(game: Phaser.Game)
 	 * 游戏的定时器，可以管理多个定时任务
 	 */
 	let timer: Phaser.Timer;
+
+	let debug = 0;
 	/**
 	 * 游戏资源预加载
 	 */
@@ -139,62 +141,6 @@ function getState(game: Phaser.Game)
 
 		//createBricks(20, 20, 20);
 
-		function createEnemy(x: number, y: number)
-		{
-			//let enemy = game.add.sprite(x || 200, y || 200, 'enemy');
-			let enemy = game.add.sprite(x || 200, y || 200, 'enemy');
-			enemy.animations.add('stand', [0, 1, 2, 3, 4], 10, true);//开启帧动画
-			enemy.animations.play('stand');
-			game.physics.p2.enable(enemy, false);
-			enemy.body.static = true;//设置不能移动
-			enemy.body.setCollisionGroup(enemyCollisionGroup);
-			enemy.body.collides([roleBulletCollisionGroup]);
-			enemy.health = 10;//生命值
-			let fire = timer.loop(1000, () =>
-			{
-				let bullet = game.add.sprite(enemy.body.x, enemy.body.y, 'bullet-enemy', 162);
-				game.physics.p2.enable(bullet, false);
-				bullet.body.setCircle(8);
-				let tween = game.add.tween(bullet.body).to({angle: 359}, 4000, Phaser.Easing.Default, true, 0, -1);
-				let vector = new Vector(role.body.x - bullet.body.x, role.body.y - bullet.body.y);
-				vector.value = 400;
-				bullet.body.velocity.x = vector.x;
-				bullet.body.velocity.y = vector.y;
-				bullet.body.setCollisionGroup(enemyBulletCollisionGroup);
-				bullet.body.collides([roleCollisionGroup]);
-				bullet.body.collideWorldBounds = false;
-				bullet.body.checkWorldBounds = true;
-				bullet.body.onBeginContact.add(() =>
-				{
-					game.tweens.remove(tween);
-					bullet.destroy();
-					game.camera.shake(0.01,500,true);
-				});
-				bullet.events.onOutOfBounds.add(() =>
-				{
-					game.tweens.remove(tween);
-					bullet.destroy();
-				});
-			});
-			enemy.body.onBeginContact.add(() =>
-			{
-				enemy.damage(1);
-			});
-			enemy.events.onKilled.add(() =>
-			{
-				timer.remove(fire);
-				enemy.destroy();
-			});
-			return enemy;
-			//game.add.tween(enemy.body).to({x:600},2000,Phaser.Easing.Bounce.Out,true,0,-1,true);//往复移动补间动画
-		}
-
-		timer.loop(1000, () =>
-		{
-			createEnemy(Math.random() * 800, Math.random() * 400);
-		});
-
-
 		function createRole()
 		{
 			let scale = 2;
@@ -208,12 +154,10 @@ function getState(game: Phaser.Game)
 			//role.body.data.shapes[0].sensor = true;//关闭碰撞，但是依旧有碰撞检测回调
 			role.body.setCollisionGroup(roleCollisionGroup);//设置属于的碰撞组
 			role.body.collides([enemyBulletCollisionGroup]);//设置要碰撞的组
-			//role.body.collideWorldBounds = false;//不和世界边界碰撞
-			role.body.onBeginContact.add((role, thing) =>
+			role.body.collideWorldBounds = true;
+			role.body.onBeginContact.add(() =>
 			{
-				//console.log(thing);
-				//thing.parent.sprite.destroy();//destroy可以摧毁对象
-				//thing.parent.sprite.kill();//kill将设置对象生命值为0，不再参与游戏循环，不可见，但是保留对象
+
 			}, this);//设置碰撞回调，不需要开启impact
 
 			game.camera.follow(role);//相机跟随
@@ -305,6 +249,66 @@ function getState(game: Phaser.Game)
 			bullet.body.velocity.y = vy;
 		});
 
+		function createEnemy(x: number, y: number)
+		{
+			//let enemy = game.add.sprite(x || 200, y || 200, 'enemy');
+			let enemy = game.add.sprite(x || 200, y || 200, 'enemy');
+			enemy.animations.add('stand', [0, 1, 2, 3, 4], 10, true);//开启帧动画
+			enemy.animations.play('stand');
+			game.physics.p2.enable(enemy, false);
+			enemy.body.static = true;//设置不能移动
+			enemy.body.setCollisionGroup(enemyCollisionGroup);
+			enemy.body.collides([roleBulletCollisionGroup]);
+			enemy.body.collideWorldBounds = true;
+			enemy.health = 10;//生命值
+			let fire = timer.loop(100, () =>
+			{
+				let bullet = game.add.sprite(enemy.body.x, enemy.body.y, 'bullet-enemy', 162);
+				debug++;
+				game.physics.p2.enable(bullet, false);
+				bullet.body.setCircle(8);
+				bullet.body.setZeroDamping();
+				let tween = game.add.tween(bullet.body).to({angle: 359}, 4000, Phaser.Easing.Default, true, 0, -1);
+				bullet.body.setCollisionGroup(enemyBulletCollisionGroup);
+				bullet.body.collides([roleCollisionGroup]);
+				bullet.body.collideWorldBounds = false;
+				bullet.body.onBeginContact.add(() =>
+				{
+					bullet.kill();
+					game.camera.shake(0.01,500,true);
+				}, this);
+				bullet.checkWorldBounds = true;
+				bullet.events.onOutOfBounds.add(() =>
+				{
+					bullet.kill();
+				}, this);
+				bullet.events.onKilled.add(()=>{
+					game.tweens.remove(tween);
+					bullet.destroy();
+					debug--;
+				});
+				let vector = new Vector(role.body.x - bullet.body.x, role.body.y - bullet.body.y);
+				vector.value = 400;
+				bullet.body.velocity.x = vector.x;
+				bullet.body.velocity.y = vector.y;
+			});
+			enemy.body.onBeginContact.add(() =>
+			{
+				enemy.damage(1);
+			});
+			enemy.events.onKilled.add(() =>
+			{
+				timer.remove(fire);
+				enemy.destroy();
+			});
+			return enemy;
+		}
+
+		timer.repeat(0,20, () =>
+		{
+			createEnemy(Math.random() * 800, Math.random() * 400);
+		});
+
 
 		setupKeyboard();
 
@@ -389,6 +393,7 @@ function getState(game: Phaser.Game)
 	{
 		fps.text = "Fps:" + game.time.fps;
 		fps.bringToTop();//置于最上层
+		console.log(debug);
 	};
 
 	let playState = {
