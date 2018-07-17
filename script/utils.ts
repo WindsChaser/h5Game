@@ -4,7 +4,7 @@
 /**
  * 自定义工具类
  */
-import {LinkedList} from "./module_loader.js"
+import {DoublyLinkedList} from './lib/doubly-linked-list';
 
 class Utils
 {
@@ -260,7 +260,7 @@ class ObjectPool
 
 	constructor(create, release, init)
 	{
-		this._linkedList = new LinkedList();
+		this._linkedList = new DoublyLinkedList();
 		this._create = create;
 		this._release = release;
 		this._init = init;

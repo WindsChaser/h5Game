@@ -1,3 +1,4 @@
+import 'phaser-ce';
 declare function getState(game: Phaser.Game): {
     preload: () => void;
     create: () => void;

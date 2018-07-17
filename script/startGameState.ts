@@ -1,4 +1,4 @@
-import KeyCode = Phaser.KeyCode;
+import 'phaser-ce';
 
 function getState(game: Phaser.Game)
 {
@@ -51,9 +51,9 @@ function getState(game: Phaser.Game)
 
 
 		let concernedKeys = game.input.keyboard.addKeys({
-			"z": KeyCode.Z
+			"z": Phaser.KeyCode.Z
 		});
-		game.input.keyboard.addKeyCapture(KeyCode.Z);
+		game.input.keyboard.addKeyCapture(Phaser.KeyCode.Z);
 		concernedKeys.z.onDown.addOnce(() =>
 		{
 			game.add.tween(game.world).to({alpha: 0}, 500, Phaser.Easing.Default, true).onComplete.add(() =>

@@ -1,8 +1,8 @@
 /**
  * 主模块
  */
-import startGameState from "./startGameState.js";
-import playGameState from "./playGameState.js";
+import startGameState from './startGameState.js';
+import playGameState from './playGameState.js';
 /**
  * 新建游戏
  * @type {Phaser.Game}

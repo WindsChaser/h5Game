@@ -1,5 +1,5 @@
-var KeyCode = Phaser.KeyCode;
-import { Vector, ObjectPool } from "./utils.js";
+import 'phaser-ce';
+import { Vector, ObjectPool } from "./utils";
 function getState(game) {
     /**
      * 画笔
@@ -173,21 +173,21 @@ function getState(game) {
          */
         function setupKeyboard() {
             concernedKeys = game.input.keyboard.addKeys({
-                "left": KeyCode.LEFT,
-                "right": KeyCode.RIGHT,
-                "up": KeyCode.UP,
-                "down": KeyCode.DOWN,
-                "shift": KeyCode.SHIFT,
-                "z": KeyCode.Z,
-                "space": KeyCode.SPACEBAR
+                "left": Phaser.KeyCode.LEFT,
+                "right": Phaser.KeyCode.RIGHT,
+                "up": Phaser.KeyCode.UP,
+                "down": Phaser.KeyCode.DOWN,
+                "shift": Phaser.KeyCode.SHIFT,
+                "z": Phaser.KeyCode.Z,
+                "space": Phaser.KeyCode.SPACEBAR
             });
-            game.input.keyboard.addKeyCapture(KeyCode.LEFT);
-            game.input.keyboard.addKeyCapture(KeyCode.RIGHT);
-            game.input.keyboard.addKeyCapture(KeyCode.UP);
-            game.input.keyboard.addKeyCapture(KeyCode.DOWN);
-            game.input.keyboard.addKeyCapture(KeyCode.SHIFT);
-            game.input.keyboard.addKeyCapture(KeyCode.Z);
-            game.input.keyboard.addKeyCapture(KeyCode.SPACEBAR);
+            game.input.keyboard.addKeyCapture(Phaser.KeyCode.LEFT);
+            game.input.keyboard.addKeyCapture(Phaser.KeyCode.RIGHT);
+            game.input.keyboard.addKeyCapture(Phaser.KeyCode.UP);
+            game.input.keyboard.addKeyCapture(Phaser.KeyCode.DOWN);
+            game.input.keyboard.addKeyCapture(Phaser.KeyCode.SHIFT);
+            game.input.keyboard.addKeyCapture(Phaser.KeyCode.Z);
+            game.input.keyboard.addKeyCapture(Phaser.KeyCode.SPACEBAR);
         }
         roleBulletPool = new ObjectPool(() => {
             let bullet = game.add.sprite(0, 0, "bullet-role");

@@ -2,11 +2,8 @@
  * 主模块
  */
 
-import KeyCode = Phaser.KeyCode;
-import {Vector, ObjectPool} from "./utils.js";
-import {createPool} from "./module_loader.js"
-import startGameState from "./startGameState.js"
-import playGameState from "./playGameState.js"
+import startGameState from './startGameState.js'
+import playGameState from './playGameState.js'
 
 
 /**
