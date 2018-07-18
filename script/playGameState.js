@@ -1,4 +1,4 @@
-import 'phaser-ce';
+import * as Phaser from 'phaser-ce';
 import { Vector, ObjectPool } from "./utils";
 function getState(game) {
     /**
