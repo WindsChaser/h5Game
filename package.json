@@ -2,6 +2,8 @@
   "name": "h5Game",
   "version": "0.0.1",
   "dependencies": {
+    "copy-webpack-plugin": "^4.5.2",
+    "npm": "^6.2.0",
     "webpack": "^4.16.1",
     "webpack-cli": "^3.0.8"
   },
@@ -13,6 +15,6 @@
     "phaser-ce": "^2.11.0"
   },
   "scripts": {
-    "run-dev": "webpack --config webpack.dev.js"
+    "build-dev":"webpack --config webpack.dev.js"
   }
 }
