@@ -2,19 +2,19 @@
   "name": "h5Game",
   "version": "0.0.1",
   "dependencies": {
-    "copy-webpack-plugin": "^4.5.2",
-    "npm": "^6.2.0",
-    "webpack": "^4.16.1",
-    "webpack-cli": "^3.0.8"
-  },
-  "devDependencies": {
     "clean-webpack-plugin": "^0.1.19",
+    "copy-webpack-plugin": "^4.5.2",
     "expose-loader": "^0.7.5",
     "file-loader": "^1.1.11",
     "html-webpack-plugin": "^3.2.0",
+    "html-webpack-template": "^6.2.0",
+    "webpack": "^4.16.1",
+    "webpack-cli": "^3.1.0"
+  },
+  "devDependencies": {
     "phaser-ce": "^2.11.0"
   },
   "scripts": {
-    "build-dev":"webpack --config webpack.dev.js"
+    "build-dev": "webpack --config webpack.dev.js"
   }
 }
