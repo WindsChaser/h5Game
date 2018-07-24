@@ -4,7 +4,8 @@
     "target": "es6",
     "sourceMap": true,
     "moduleResolution": "node",
-    "declaration": true
+    "declaration": true,
+    "removeComments": true
   },
   "exclude": [
     "node_modules"

@@ -26840,7 +26840,9 @@ declare module Phaser {
     class Sprite extends PIXI.Sprite {
 
 
-        /**
+	    [x: string]: any;
+
+	    /**
         * Sprites are the lifeblood of your game, used for nearly everything visual.
         * 
         * At its most basic a Sprite consists of a set of coordinates and a texture that is rendered to the canvas.

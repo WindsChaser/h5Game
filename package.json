@@ -15,6 +15,7 @@
     "phaser-ce": "^2.11.0"
   },
   "scripts": {
-    "build-dev": "webpack --config webpack.dev.js"
+    "build-dev": "webpack --config webpack.dev.js",
+    "build-dev-watch":"webpack --watch --config webpack.dev.js"
   }
 }
