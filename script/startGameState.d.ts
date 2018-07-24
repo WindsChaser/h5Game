@@ -1,8 +1,7 @@
-import 'phaser-ce';
-declare function getState(game: Phaser.Game): {
-    preload: () => void;
-    create: () => void;
-    update: () => void;
-    render: () => void;
-};
-export default getState;
+import { default as GameState } from "./gameState";
+declare class StartGameState extends GameState {
+    preload(): void;
+    create(): void;
+    update(): void;
+}
+export default StartGameState;

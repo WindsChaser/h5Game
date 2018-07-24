@@ -29,9 +29,6 @@ module.exports = {
 	plugins: [
 		new CleanWebpackPlugin(['bin']),
 		new HtmlWebpackPlugin({title: 'h5Game'}),
-		new webpack.optimize.SplitChunksPlugin({
-			name:"common"
-		}),
 		new CopyWebpackPlugin([{
 			from: path.resolve(__dirname, "res"),
 			to: path.resolve(__dirname, "bin/res")
@@ -47,5 +44,4 @@ module.exports = {
 	optimization: {
 		splitChunks:{chunks: "all", name: "vendor"}
 	}
-	
 };
