@@ -1,4 +1,4 @@
-import 'phaser-ce';
+import 'phaser';
 function getState(game) {
     let preload = () => {
         game.load.baseURL = "res/";

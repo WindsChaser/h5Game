@@ -1,4 +1,4 @@
-import 'phaser-ce'
+import 'phaser'
 
 function getState(game: Phaser.Game)
 {

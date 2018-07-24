@@ -9,12 +9,12 @@ const pixi = path.join(phaserModule, 'build/custom/pixi.js');
 const p2 = path.join(phaserModule, 'build/custom/p2.js');
 module.exports = {
 	entry: {
-		lib: ['pixi', 'p2','phaser'],
+		//lib: ['pixi', 'p2','phaser'],
 		main: ["./script/main.js"]
 	},
 	output: {
 		path: path.resolve(__dirname, "bin"),
-		filename: "[name].js"
+		filename: "[name].[chunkhash].js"
 	},
 	module: {
 		rules: [
@@ -22,7 +22,7 @@ module.exports = {
 			{test: p2, loader: "expose-loader?p2"},
 			{test: phaser, loader: "expose-loader?Phaser"}
 		],
-		noParse: /phaser/
+		//noParse: /phaser/
 	},
 	devtool: 'source-map',
 	mode: 'development',
@@ -30,12 +30,7 @@ module.exports = {
 		new CleanWebpackPlugin(['bin']),
 		new HtmlWebpackPlugin({title: 'h5Game'}),
 		new webpack.optimize.SplitChunksPlugin({
-			chunks: "all",
-			minSize: 20000,
-			minChunks: 1,
-			maxAsyncRequests: 5,
-			maxInitialRequests: 3,
-			name: true
+			name:"common"
 		}),
 		new CopyWebpackPlugin([{
 			from: path.resolve(__dirname, "res"),
@@ -48,5 +43,9 @@ module.exports = {
 			'pixi': pixi,
 			'p2': p2
 		}
+	},
+	optimization: {
+		splitChunks:{chunks: "all", name: "vendor"}
 	}
+	
 };

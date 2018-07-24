@@ -1,7 +1,9 @@
 /**
  * 主模块
  */
-import 'phaser-ce';
+import 'pixi';
+import 'p2';
+import 'phaser'
 import startGameState from './startGameState.js'
 import playGameState from './playGameState.js'
 
