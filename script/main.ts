@@ -6,6 +6,7 @@ import 'p2';
 import 'phaser'
 import startGameState from './startGameState.js'
 import playGameState from './playGameState.js'
+import menuState from './menuState.js'
 
 
 /**
@@ -14,5 +15,6 @@ import playGameState from './playGameState.js'
  */
 let game = new Phaser.Game(1280, 960, Phaser.AUTO);
 game.state.add("start", new startGameState());//游戏启动画面
+game.state.add("menu", new menuState());//游戏菜单画面
 game.state.add("play", new playGameState());//正式开始游戏画面
 game.state.start("start");

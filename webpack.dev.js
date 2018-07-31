@@ -9,7 +9,6 @@ const pixi = path.join(phaserModule, 'build/custom/pixi.js');
 const p2 = path.join(phaserModule, 'build/custom/p2.js');
 module.exports = {
 	entry: {
-		//lib: ['pixi', 'p2','phaser'],
 		main: ["./script/main.js"]
 	},
 	output: {
@@ -21,8 +20,7 @@ module.exports = {
 			{test: pixi, loader: "expose-loader?PIXI"},
 			{test: p2, loader: "expose-loader?p2"},
 			{test: phaser, loader: "expose-loader?Phaser"}
-		],
-		//noParse: /phaser/
+		]
 	},
 	devtool: 'source-map',
 	mode: 'development',
@@ -42,6 +40,21 @@ module.exports = {
 		}
 	},
 	optimization: {
-		splitChunks:{chunks: "all", name: "vendor"}
+		splitChunks: {
+			chunks: "all", name: "vendor", cacheGroups: {
+				common: {
+					test: /doubly-linked-list/,
+					chunks: "initial",
+					name: "common",
+					minSize: 0,
+					minChunks:1
+				},
+				vendor: {
+					test: /node_modules/,
+					chunks: 'initial',
+					name: 'vendor'
+				}
+			}
+		}
 	}
 };

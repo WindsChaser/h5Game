@@ -1,5 +1,5 @@
 import { default as GameState } from "./gameState";
-class StartGameState extends GameState {
+export default class StartGameState extends GameState {
     preload() {
         this.game.load.baseURL = "res/";
         this.game.load.image('start-1', "background/start-1.png");
@@ -44,7 +44,7 @@ class StartGameState extends GameState {
         this.game.input.keyboard.addKeyCapture(Phaser.KeyCode.Z);
         concernedKeys.z.onDown.addOnce(() => {
             this.game.add.tween(this.game.world).to({ alpha: 0 }, 500, Phaser.Easing.Default, true).onComplete.add(() => {
-                this.game.state.start('play', true, true);
+                this.game.state.start('menu', true, false);
             });
         });
     }
@@ -53,5 +53,4 @@ class StartGameState extends GameState {
     }
     ;
 }
-export default StartGameState;
 //# sourceMappingURL=startGameState.js.map
